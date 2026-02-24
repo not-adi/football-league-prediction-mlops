@@ -12,3 +12,8 @@ requests
 httpx
 pyyaml
 python-dotenv
+streamlit
+plotly
+pandas
+requests
+pyyaml
