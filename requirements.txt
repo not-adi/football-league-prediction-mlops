@@ -12,7 +12,7 @@ requests
 httpx
 pyyaml
 python-dotenv
-streamlit
+streamlit>=1.23.0
 plotly
 pandas
 requests
