@@ -1,0 +1,13 @@
+﻿leagues:
+  PL:
+    name: "Premier League"
+    country: "England"
+    football_data_code: "PL"
+    teams: 20
+    seasons_for_training: 3
+  PD:
+    name: "La Liga"
+    country: "Spain"
+    football_data_code: "PD"
+    teams: 20
+    seasons_for_training: 3

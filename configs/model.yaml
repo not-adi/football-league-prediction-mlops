@@ -1,0 +1,23 @@
+﻿dixon_coles:
+  xi: 0.0018
+  method: "SLSQP"
+  max_iterations: 500
+  use_rho_correction: true
+
+simulation:
+  n_simulations: 10000
+  random_seed: 42
+  win_points: 3
+  draw_points: 1
+  loss_points: 0
+
+feature_engineering:
+  rolling_window_matches: 5
+  elo_k_factor: 32
+  elo_initial_rating: 1500
+  home_advantage_weight: true
+
+mlflow:
+  experiment_name: "football-league-prediction"
+  registered_model_name: "dixon-coles-{league}"
+  promotion_accuracy_delta: 0.02

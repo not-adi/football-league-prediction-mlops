@@ -1,0 +1,131 @@
+services:
+
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.12.1
+    container_name: football_mlflow
+    ports:
+      - "5000:5000"
+    volumes:
+      - mlflow_data:/mlflow
+    command: >
+      mlflow server
+      --host 0.0.0.0
+      --port 5000
+      --backend-store-uri sqlite:///mlflow/mlflow.db
+      --default-artifact-root /mlflow/artifacts
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    networks:
+      - football_net
+
+  prefect:
+    image: prefecthq/prefect:3-python3.11
+    container_name: football_prefect
+    ports:
+      - "4200:4200"
+    command: prefect server start --host 0.0.0.0
+    environment:
+      - PREFECT_UI_API_URL=http://localhost:4200/api
+      - PREFECT_API_DATABASE_CONNECTION_URL=sqlite+aiosqlite:////prefect_data/prefect.db
+      - PREFECT_HOME=/prefect_data
+    volumes:
+      - prefect_data:/prefect_data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:4200/api/health')"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    networks:
+      - football_net
+
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.app
+    container_name: football_app
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - PREFECT_API_URL=http://prefect:4200/api
+    volumes:
+      - ./data:/app/data
+      - ./mlflow/artifacts:/app/mlflow/artifacts
+      - ./configs:/app/configs
+      - ./pipelines:/app/pipelines
+      - ./src:/app/src
+    depends_on:
+      mlflow:
+        condition: service_healthy
+      prefect:
+        condition: service_healthy
+    command: uvicorn src.api.main:app --host 0.0.0.0 --port 8000 --reload
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - football_net
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.dashboard
+    container_name: football_dashboard
+    ports:
+      - "8501:8501"
+    env_file:
+      - .env
+    environment:
+      - API_URL=http://app:8000
+    volumes:
+      - ./configs:/app/configs
+      - ./src/dashboard:/app/src/dashboard
+    depends_on:
+      app:
+        condition: service_healthy
+    command: streamlit run src/dashboard/app.py --server.port 8501 --server.address 0.0.0.0
+    networks:
+      - football_net
+
+  worker:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.app
+    container_name: football_worker
+    env_file:
+      - .env
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - PREFECT_API_URL=http://prefect:4200/api
+    volumes:
+      - ./data:/app/data
+      - ./mlflow/artifacts:/app/mlflow/artifacts
+      - ./configs:/app/configs
+      - ./pipelines:/app/pipelines
+      - ./src:/app/src
+    depends_on:
+      prefect:
+        condition: service_healthy
+      mlflow:
+        condition: service_healthy
+    command: prefect worker start --pool football-worker-pool --type process
+    networks:
+      - football_net
+
+networks:
+  football_net:
+    driver: bridge
+
+volumes:
+  mlflow_data:
+  prefect_data:

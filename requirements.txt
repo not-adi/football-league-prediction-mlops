@@ -1,0 +1,14 @@
+numpy
+pandas
+scipy
+scikit-learn
+tqdm
+mlflow
+prefect
+fastapi
+uvicorn[standard]
+pydantic
+requests
+httpx
+pyyaml
+python-dotenv
