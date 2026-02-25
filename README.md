@@ -1,4 +1,5 @@
 # ⚽ Football League Prediction — End-to-End MLOps
+Deployed link = https://football-prediction-adi.streamlit.app/
 
 Probabilistic prediction of **Premier League** and **La Liga** final standings using a Dixon-Coles Poisson model with Monte Carlo simulation. Built with a production-grade MLOps stack.
 
